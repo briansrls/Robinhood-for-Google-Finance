@@ -57,11 +57,14 @@ if args.debug:
 	    print('Oops.  Unable to write file to debug.txt')
 
 # do/while for pagination
+
+#pagination
 paginated = True
 page = 0
 while paginated:
 	for i, order in enumerate(orders['results']):
 		executions = order['executions']
+		
 		instrument = robinhood.get_custom_endpoint(order['instrument'])
 		fields[i+(page*100)]['symbol'] = instrument['symbol']
 		for key, value in enumerate(order):
@@ -73,16 +76,18 @@ while paginated:
 			 	fields[i+(page*100)][value] = executions[0][value]
 		elif order['state'] == "queued":
 			queued_count += 1
-	# paginate
+	# paginate, if out of ORDERS paginate is OVER
 	if orders['next'] is not None:
 		page = page + 1
+		#get the next order, a page is essentially one order
 		orders = robinhood.get_custom_endpoint(str(orders['next']))
 	else:
 		paginated = False
 
-# for i in fields:
+#for i in fields:
 # 	print fields[i]
 # 	print "-------"	
+#Fields stores ALL relevant information
 
 # check we have trade data to export
 if trade_count > 0 or queded_count > 0:
@@ -93,18 +98,46 @@ else:
 	quit()
 
 # CSV headers
+
+desired = ("price", "created_at", "fees", "quantity", "symbol", "side")
+
+#need to filter out the offending headers
+
 keys = fields[0].keys()
 keys = sorted(keys)
-csv = ','.join(keys)+"\n"
+newkeys = []
+for key in keys:
+	if key in desired:
+		newkeys.append(key)
 
+keys = list(newkeys)
+
+for i in range(0, len(newkeys)):
+	if newkeys[i] == "price": 
+		newkeys[i] = "Purchase price per share"
+	if newkeys[i] == "created_at": 
+		newkeys[i] = "Date purchased"
+	if newkeys[i] == "fees": 
+		newkeys[i] = "Commission"
+	if newkeys[i] == "quantity": 
+		newkeys[i] = "Shares"
+	if newkeys[i] == "symbol": 
+		newkeys[i] = "Symbol"
+	if newkeys[i] == "side": 
+		newkeys[i] = "Transaction type"
+
+csv = ','.join(newkeys)+"\n"
 # CSV rows
+
+
 for row in fields:
 	for key in keys:
-		try:
-			csv += str(fields[row][key]) + ","
-		except:
-			csv += ","
+			try:
+				csv += str(fields[row][key]) + ","
+			except:
+				csv += ","
 	csv += "\n"
+
 
 # choose a filename to save to
 print("Choose a filename or press enter to save to `robinhood.csv`:")
