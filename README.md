@@ -1,7 +1,6 @@
 # Robinhood to CSV
 
-A Python script to export your [Robinhood](https://www.robinhood.com) trades to a .csv file.  Based on the [Robinhood library by Rohan Pai](https://github.com/Jamonek/Robinhood).  Read more on my [blog post](http://www.onlineaspect.com/2015/12/17/export-robinhood-investments-to-csv).
-
+A Python script to export your [Robinhood](https://www.robinhood.com) trades to a .csv file (In a nice, Google Finance friendly format).  Based on the [Robinhood library by Rohan Pai](https://github.com/Jamonek/Robinhood) and [Robinhood to CSV by Josh Fraser](https://github.com/joshfraser).
 Works on Python 2.7+ and 3.5+
 
 ###Install:
