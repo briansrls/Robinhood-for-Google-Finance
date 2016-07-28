@@ -129,15 +129,22 @@ for i in range(0, len(newkeys)):
 csv = ','.join(newkeys)+"\n"
 # CSV rows
 
+line = ""
+csvb = []
 
 for row in fields:
 	for key in keys:
 			try:
-				csv += str(fields[row][key]) + ","
+				line += str(fields[row][key]) + ","
 			except:
-				csv += ","
-	csv += "\n"
+				line += ","
+	line += "\n"
+	csvb.append(line)
+	line = ""
 
+#google finance seems to prefer dates in ascending order, so we must reverse the given order
+for i in reversed(csvb):
+	csv+=str(i)
 
 # choose a filename to save to
 print("Choose a filename or press enter to save to `robinhood.csv`:")
