@@ -7,4 +7,4 @@ Works on Python 2.7+ and 3.5+
     pip install -r requirements.txt
 
 ###Run:
-    python csv-export.py
+    python gf-export.py
