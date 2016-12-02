@@ -127,7 +127,12 @@ for i in range(0, len(newkeys)):
 	if newkeys[i] == "cancel":
 		newkeys[i] = "Cancelled"
 
-csv = ','.join(newkeys)+"\n"
+csv = ""
+for key in newkeys:
+	if key != "Cancelled":
+		csv += key + ','
+csv += "\n"
+
 # CSV rows
 
 line = ""
@@ -137,7 +142,8 @@ for row in fields:
 	for key in keys:
 		if str(fields[row]["cancel"]) == "None":
 	  		try:
-		       		line += str(fields[row][key]) + ","
+				if key!="cancel":
+			       		line += str(fields[row][key]) + ","
 			except:
 				line += ","
 	line += "\n"
