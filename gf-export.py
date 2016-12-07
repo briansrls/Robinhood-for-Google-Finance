@@ -145,7 +145,7 @@ for row in fields:
 		if str(fields[row]["state"]) == "filled" and str(fields[row]["cancel"]) == "None":
 	  		try:
 				if key!="state" and key!="cancel":
-			       		line += str(fields[row][key]) + ","
+					line += str(fields[row][key]) + ","
 			except:
 				line += ","
 	if str(fields[row]["state"]) == "filled":
