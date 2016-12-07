@@ -99,7 +99,7 @@ else:
 
 # CSV headers
 
-desired = ("price", "created_at", "fees", "quantity", "symbol", "side", "state")
+desired = ("price", "created_at", "fees", "quantity", "symbol", "side", "state", "cancel")
 
 #need to filter out the offending headers
 
@@ -126,10 +126,12 @@ for i in range(0, len(newkeys)):
 		newkeys[i] = "Transaction type"
 	if newkeys[i] == "state":
 		newkeys[i] = "State"
+	if newkeys[i] == "cancel":
+		newkeys[i] = "Cancelled"
 
 csv = ""
 for key in newkeys:
-	if key != "State":
+	if key != "State" and key != "Cancelled":
 		csv += key + ','
 csv += "\n"
 
@@ -140,9 +142,9 @@ csvb = []
 
 for row in fields:
 	for key in keys:
-		if str(fields[row]["state"]) == "filled":
+		if str(fields[row]["state"]) == "filled" and str(fields[row]["cancel"]) == "None":
 	  		try:
-				if key!="state":
+				if key!="state" and key!="cancel":
 			       		line += str(fields[row][key]) + ","
 			except:
 				line += ","
