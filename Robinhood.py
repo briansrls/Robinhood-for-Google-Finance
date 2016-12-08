@@ -1,6 +1,7 @@
 import json
 import requests
 import urllib
+import sys
 
 try:
     from urllib.request import urlretrieve  #py3
@@ -66,7 +67,10 @@ class Robinhood:
     def login(self, username, password):
         self.username = username
         self.password = password
-        data = urllib.urlencode({"password" : self.password, "username" : self.username})
+        if sys.version_info[0] < 3:
+                data = urllib.urlencode({"password" : self.password, "username" : self.username})
+        else:
+                data = urllib.parse.urlencode({"password" : self.password, "username" : self.username})
         res = self.session.post(self.endpoints['login'], data=data)
         res = res.json()
         try:
