@@ -72,8 +72,8 @@ while paginated:
                 fields[i+(page*100)][value] = order[value]
         if order['state'] == "filled":
             trade_count += 1
-            for key, value in enumerate(executions[0]):
-                 fields[i+(page*100)][value] = executions[0][value]
+            # for key, value in enumerate(executions[0]):
+            #      fields[i+(page*100)][value] = executions[0][value]
         elif order['state'] == "queued":
             queued_count += 1
     # paginate, if out of ORDERS paginate is OVER
