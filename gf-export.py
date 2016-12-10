@@ -99,7 +99,7 @@ else:
 
 # CSV headers
 
-desired = ("price", "created_at", "fees", "quantity", "symbol", "side", "state", "cancel")
+desired = ("average_price", "created_at", "fees", "quantity", "symbol", "side", "state", "cancel")
 
 #need to filter out the offending headers
 
@@ -112,7 +112,7 @@ for key in keys:
 
 keys = list(newkeys)
 for i in range(0, len(newkeys)):
-    if newkeys[i] == "price": 
+    if newkeys[i] == "average_price":
         newkeys[i] = "Purchase price per share"
     if newkeys[i] == "created_at": 
         newkeys[i] = "Date purchased"
@@ -145,6 +145,8 @@ for row in fields:
         if str(fields[row]["state"]) == "filled" and str(fields[row]["cancel"]) == "None":
             try:
                 if key!="state" and key!="cancel":
+                    if key=="average_price" or key=="fees":
+                        fields[row][key] = round(float(fields[row][key]),2)
                     line += str(fields[row][key]) + ","
             except:
                 line += ","
