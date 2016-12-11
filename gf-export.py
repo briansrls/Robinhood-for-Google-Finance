@@ -61,19 +61,23 @@ if args.debug:
 #pagination
 paginated = True
 page = 0
+n = 0
 while paginated:
     for i, order in enumerate(orders['results']):
         executions = order['executions']
-        
+
         instrument = robinhood.get_custom_endpoint(order['instrument'])
-        fields[i+(page*100)]['symbol'] = instrument['symbol']
-        for key, value in enumerate(order):
-            if value != "executions":
-                fields[i+(page*100)][value] = order[value]
         if order['state'] == "filled":
             trade_count += 1
-            # for key, value in enumerate(executions[0]):
-            #      fields[i+(page*100)][value] = executions[0][value]
+            for execution in executions: # Iterate over all the different executions
+                fields[n]['symbol'] = instrument['symbol']
+                for key, value in enumerate(order):
+                    if value != "executions":
+                        fields[n][value] = order[value]
+                fields[n]['timestamp'] = execution['timestamp']
+                fields[n]['quantity'] = execution['quantity']
+                fields[n]['price'] = execution['price']
+                n+=1
         elif order['state'] == "queued":
             queued_count += 1
     # paginate, if out of ORDERS paginate is OVER
@@ -99,7 +103,7 @@ else:
 
 # CSV headers
 
-desired = ("average_price", "created_at", "fees", "quantity", "symbol", "side", "state", "cancel")
+desired = ("price", "timestamp", "fees", "quantity", "symbol", "side", "state", "cancel")
 
 #need to filter out the offending headers
 
@@ -112,17 +116,17 @@ for key in keys:
 
 keys = list(newkeys)
 for i in range(0, len(newkeys)):
-    if newkeys[i] == "average_price":
+    if newkeys[i] == "price":
         newkeys[i] = "Purchase price per share"
-    if newkeys[i] == "created_at": 
+    if newkeys[i] == "timestamp":
         newkeys[i] = "Date purchased"
-    if newkeys[i] == "fees": 
+    if newkeys[i] == "fees":
         newkeys[i] = "Commission"
-    if newkeys[i] == "quantity": 
+    if newkeys[i] == "quantity":
         newkeys[i] = "Shares"
-    if newkeys[i] == "symbol": 
+    if newkeys[i] == "symbol":
         newkeys[i] = "Symbol"
-    if newkeys[i] == "side": 
+    if newkeys[i] == "side":
         newkeys[i] = "Transaction type"
     if newkeys[i] == "state":
         newkeys[i] = "State"
