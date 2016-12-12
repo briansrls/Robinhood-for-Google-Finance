@@ -61,21 +61,33 @@ if args.debug:
 #pagination
 paginated = True
 page = 0
+n = 0
 while paginated:
     for i, order in enumerate(orders['results']):
         executions = order['executions']
-        
-        instrument = robinhood.get_custom_endpoint(order['instrument'])
-        fields[i+(page*100)]['symbol'] = instrument['symbol']
-        for key, value in enumerate(order):
-            if value != "executions":
-                fields[i+(page*100)][value] = order[value]
-        if order['state'] == "filled":
+        # If the state is filled and not cancelled
+        if order['state'] == "filled" and str(order["cancel"]) == "None":
             trade_count += 1
-            # for key, value in enumerate(executions[0]):
-            #      fields[i+(page*100)][value] = executions[0][value]
+            # Iterate over all the different executions
+            for execution in executions:
+                # Get the Symbol of the order
+                instrument = robinhood.get_custom_endpoint(order['instrument'])
+                fields[n]['symbol'] = instrument['symbol']
+
+                # Get all the key,value from the order
+                for key, value in enumerate(order):
+                    if value != "executions":
+                        fields[n][value] = order[value]
+
+                # Get specific values from the execution of the order
+                fields[n]['timestamp'] = execution['timestamp']
+                fields[n]['quantity'] = execution['quantity']
+                fields[n]['price'] = execution['price']
+                n+=1
+        # If the state is queued, we keep this to let the user know they are pending orders
         elif order['state'] == "queued":
             queued_count += 1
+
     # paginate, if out of ORDERS paginate is OVER
     if orders['next'] is not None:
         page = page + 1
@@ -90,7 +102,7 @@ while paginated:
 #Fields stores ALL relevant information
 
 # check we have trade data to export
-if trade_count > 0 or queded_count > 0:
+if trade_count > 0 or queued_count > 0:
     print("%d queued trade%s and %d executed trade%s found in your account." % (queued_count, "s"[queued_count==1:], trade_count, "s"[trade_count==1:]))
     # print str(queued_count) + " queded trade(s) and " + str(trade_count) + " executed trade(s) found in your account."
 else:
@@ -99,7 +111,7 @@ else:
 
 # CSV headers
 
-desired = ("average_price", "created_at", "fees", "quantity", "symbol", "side", "state", "cancel")
+desired = ("price", "timestamp", "fees", "quantity", "symbol", "side")
 
 #need to filter out the offending headers
 
@@ -112,27 +124,22 @@ for key in keys:
 
 keys = list(newkeys)
 for i in range(0, len(newkeys)):
-    if newkeys[i] == "average_price":
+    if newkeys[i] == "price":
         newkeys[i] = "Purchase price per share"
-    if newkeys[i] == "created_at": 
+    if newkeys[i] == "timestamp":
         newkeys[i] = "Date purchased"
-    if newkeys[i] == "fees": 
+    if newkeys[i] == "fees":
         newkeys[i] = "Commission"
-    if newkeys[i] == "quantity": 
+    if newkeys[i] == "quantity":
         newkeys[i] = "Shares"
-    if newkeys[i] == "symbol": 
+    if newkeys[i] == "symbol":
         newkeys[i] = "Symbol"
-    if newkeys[i] == "side": 
+    if newkeys[i] == "side":
         newkeys[i] = "Transaction type"
-    if newkeys[i] == "state":
-        newkeys[i] = "State"
-    if newkeys[i] == "cancel":
-        newkeys[i] = "Cancelled"
 
 csv = ""
 for key in newkeys:
-    if key != "State" and key != "Cancelled":
-        csv += key + ','
+    csv += key + ','
 csv += "\n"
 
 # CSV rows
@@ -142,16 +149,13 @@ csvb = []
 
 for row in fields:
     for key in keys:
-        if str(fields[row]["state"]) == "filled" and str(fields[row]["cancel"]) == "None":
-            try:
-                if key!="state" and key!="cancel":
-                    if key=="average_price" or key=="fees":
-                        fields[row][key] = round(float(fields[row][key]),2)
-                    line += str(fields[row][key]) + ","
-            except:
-                line += ","
-    if str(fields[row]["state"]) == "filled":
-        line += "\n"
+        try:
+            if key=="price" or key=="fees" or key=="quantity":
+                fields[row][key] = round(float(fields[row][key]),2)
+            line += str(fields[row][key]) + ","
+        except:
+            line += ","
+    line += "\n"
     csvb.append(line)
     line = ""
 
