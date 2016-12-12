@@ -65,21 +65,29 @@ n = 0
 while paginated:
     for i, order in enumerate(orders['results']):
         executions = order['executions']
-
-        instrument = robinhood.get_custom_endpoint(order['instrument'])
-        if order['state'] == "filled":
+        # If the state is filled and not cancelled
+        if order['state'] == "filled" and str(order["cancel"]) == "None":
             trade_count += 1
-            for execution in executions: # Iterate over all the different executions
+            # Iterate over all the different executions
+            for execution in executions:
+                # Get the Symbol of the order
+                instrument = robinhood.get_custom_endpoint(order['instrument'])
                 fields[n]['symbol'] = instrument['symbol']
+
+                # Get all the key,value from the order
                 for key, value in enumerate(order):
                     if value != "executions":
                         fields[n][value] = order[value]
+
+                # Get specific values from the execution of the order
                 fields[n]['timestamp'] = execution['timestamp']
                 fields[n]['quantity'] = execution['quantity']
                 fields[n]['price'] = execution['price']
                 n+=1
+        # If the state is queued, we keep this to let the user know they are pending orders
         elif order['state'] == "queued":
             queued_count += 1
+
     # paginate, if out of ORDERS paginate is OVER
     if orders['next'] is not None:
         page = page + 1
@@ -103,7 +111,7 @@ else:
 
 # CSV headers
 
-desired = ("price", "timestamp", "fees", "quantity", "symbol", "side", "state", "cancel")
+desired = ("price", "timestamp", "fees", "quantity", "symbol", "side")
 
 #need to filter out the offending headers
 
@@ -128,15 +136,10 @@ for i in range(0, len(newkeys)):
         newkeys[i] = "Symbol"
     if newkeys[i] == "side":
         newkeys[i] = "Transaction type"
-    if newkeys[i] == "state":
-        newkeys[i] = "State"
-    if newkeys[i] == "cancel":
-        newkeys[i] = "Cancelled"
 
 csv = ""
 for key in newkeys:
-    if key != "State" and key != "Cancelled":
-        csv += key + ','
+    csv += key + ','
 csv += "\n"
 
 # CSV rows
