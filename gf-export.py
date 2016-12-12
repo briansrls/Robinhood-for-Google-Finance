@@ -149,16 +149,13 @@ csvb = []
 
 for row in fields:
     for key in keys:
-        if str(fields[row]["state"]) == "filled" and str(fields[row]["cancel"]) == "None":
-            try:
-                if key!="state" and key!="cancel":
-                    if key=="average_price" or key=="fees":
-                        fields[row][key] = round(float(fields[row][key]),2)
-                    line += str(fields[row][key]) + ","
-            except:
-                line += ","
-    if str(fields[row]["state"]) == "filled":
-        line += "\n"
+        try:
+            if key=="price" or key=="fees" or key=="quantity":
+                fields[row][key] = round(float(fields[row][key]),2)
+            line += str(fields[row][key]) + ","
+        except:
+            line += ","
+    line += "\n"
     csvb.append(line)
     line = ""
 
