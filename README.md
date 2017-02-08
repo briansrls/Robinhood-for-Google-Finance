@@ -1,5 +1,10 @@
 # Robinhood for Google Finance
 
+###UPDATE (for the not super tech savvy!): 
+All you need to do on windows is download the latest version of python (2.7.X or 3.X) [here](https://www.python.org/downloads/) and then double click the .bat file.  This will run both of the commands listed below.  It's important to read .bat files in particular, as they have potential to be extremely malicious.  Try editing the run.bat file in your favorite text editor and confirm it is only running those two commands. 
+
+//
+
 A Python script to export your [Robinhood](https://www.robinhood.com) trades to a .csv file (In a nice, Google Finance friendly format).  Based on the [Robinhood library by Rohan Pai](https://github.com/Jamonek/Robinhood) and [Robinhood to CSV by Josh Fraser](https://github.com/joshfraser).
 Works on Python 2.7+ and 3.5+
 
