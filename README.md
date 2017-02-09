@@ -9,7 +9,7 @@ A Python script to export your [Robinhood](https://www.robinhood.com) trades to 
 Works on Python 2.7+ and 3.5+
 
 ###Install:
-    pip install -r requirements.txt
+    pip install requirements.txt
 
 ###Run:
     python gf-export.py
