@@ -1,7 +1,7 @@
 # Robinhood for Google Finance
 
 ###UPDATE (for the not super tech savvy!): 
-All you need to do on windows is download and install the latest version of python (2.7.X or 3.X, probably 3.X as you may run in to fewer issues) [here](https://www.python.org/downloads/) and then double click the .bat file.  This will run both of the commands listed below.  It's important to read .bat files in particular, as they have potential to be extremely malicious.  Try editing the run.bat file in your favorite text editor and confirm it is only running those two commands. I've also included some useful comments, in case you need help understanding what's going on!
+All you need to do on windows is download and install the latest version of python (2.7.X or 3.X, probably 3.X as you may run in to fewer issues) [here](https://www.python.org/downloads/).  Make sure that when you're installing, select the option to include python in your windows path (it will be a check box before you start the installation).  After that, double click the .bat file.  This will run both of the commands listed below.  It's important to read .bat files in particular, as they have potential to be extremely malicious.  Try editing the run.bat file in your favorite text editor and confirm it is only running those two commands. I've also included some useful comments, in case you need help understanding what's going on!
 
 //
 
