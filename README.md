@@ -8,7 +8,7 @@ All you need to do on windows is download and install the latest version of pyth
 If you run in to issues during this process, please check out the troubleshooting readme called "troubleshooting.md".  I've tried to include as many obvious fixes as possible, but if I missed something please contact me and I'll add it to the list.  
 
 ####Linux/maybe osx
-Someone actually wrote a nice article showing how to do run this [here](http://ask.xmodulo.com/export-robinhood-transaction-data.html).
+Someone actually wrote a nice article showing how to run this [here](http://ask.xmodulo.com/export-robinhood-transaction-data.html).
 
 ###Description
 
