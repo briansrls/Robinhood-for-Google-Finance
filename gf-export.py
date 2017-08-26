@@ -62,17 +62,20 @@ if args.debug:
 paginated = True
 page = 0
 n = 0
+
+#cache instruments
+cached_instruments = {} #{instrument:symbol}
+
 while paginated:
     for i, order in enumerate(orders['results']):
         executions = order['executions']
-        # If the state is filled and not cancelled
-        if order['state'] == "filled" and str(order["cancel"]) == "None":
+        if len(executions) > 0:
             trade_count += 1
             # Iterate over all the different executions
             for execution in executions:
                 # Get the Symbol of the order
-                instrument = robinhood.get_custom_endpoint(order['instrument'])
-                fields[n]['symbol'] = instrument['symbol']
+                fields[n]['symbol'] = cached_instruments.get(order['instrument'], robinhood.get_custom_endpoint(order['instrument'])['symbol'])
+                cached_instruments[order['instrument']] = fields[n]['symbol']
 
                 # Get all the key,value from the order
                 for key, value in enumerate(order):
