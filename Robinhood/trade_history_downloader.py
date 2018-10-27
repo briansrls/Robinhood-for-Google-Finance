@@ -1,14 +1,11 @@
-from Robinhood import Robinhood
-import shelve
 import json
 import csv
+import shelve
 
-logged_in = False
+from Robinhood import Robinhood
 
 def get_symbol_from_instrument_url(rb_client, url, db):
     instrument = {}
-    if type(url) != str:
-        url = url.encode('utf8')
     if url in db:
         instrument = db[url]
     else:
@@ -25,12 +22,12 @@ def order_item_info(order, rb_client, db):
     #side: .side,  price: .average_price, shares: .cumulative_quantity, instrument: .instrument, date : .last_transaction_at
     symbol = get_symbol_from_instrument_url(rb_client, order['instrument'], db)
     return {
-        'Transaction Type': order['side'],
-        'Purchase price per share': order['average_price'],
-        'Shares': order['cumulative_quantity'],
-        'Symbol': symbol,
-        'Date Purchased': order['last_transaction_at'],
-        'Commission': order['fees']
+        'side': order['side'],
+        'price': order['average_price'],
+        'shares': order['cumulative_quantity'],
+        'symbol': symbol,
+        'date': order['last_transaction_at'],
+        'state': order['state']
     }
 
 
@@ -46,15 +43,32 @@ def get_all_history_orders(rb_client):
     print("{} order fetched".format(len(orders)))
     return orders
 
-robinhood = Robinhood()
+logged_in = False
 
-# fetch order history and related metadata from the Robinhood API
-past_orders = get_all_history_orders(robinhood)
 
+rb = Robinhood()
+# !!!!!! change the username and passs, be careful when paste the code to public
+while not logged_in:
+    if username == "":
+        print("Robinhood username:")
+        try: input = raw_input
+        except NameError: pass
+        username = input()
+    if password == "":
+        password = getpass.getpass()
+
+    logged_in = robinhood.login(username=username, password=password)
+    logged_in = rb.login(username="name", password="pass")
+    if logged_in == False:
+        password = ""
+        print ("Invalid username or password.  Try again.\n")
+
+past_orders = get_all_history_orders(rb)
 instruments_db = shelve.open('instruments.db')
-orders = [order_item_info(order, robinhood, instruments_db) for order in past_orders]
-keys = ['Purchase price per share', 'Date Purchased', 'Commission', 'Shares', 'Symbol', 'Transaction Type']
+orders = [order_item_info(order, rb, instruments_db) for order in past_orders]
+keys = ['side', 'symbol', 'shares', 'price', 'date', 'state']
 with open('orders.csv', 'w') as output_file:
     dict_writer = csv.DictWriter(output_file, keys)
     dict_writer.writeheader()
     dict_writer.writerows(orders)
+

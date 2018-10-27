@@ -1,17 +1,12 @@
 """Robinhood.py: a collection of utilities for working with Robinhood's Private API """
 
 #Standard libraries
-import inspect
 import logging
 import warnings
-import unicodedata
 
 from enum import Enum
 
 #External dependencies
-import datetime
-
-import os
 from six.moves.urllib.parse import unquote  # pylint: disable=E0401
 from six.moves.urllib.request import getproxies  # pylint: disable=E0401
 from six.moves import input
@@ -20,31 +15,13 @@ import getpass
 import requests
 import six
 import dateutil
+import urllib
 
 #Application-specific imports
 from . import exceptions as RH_exception
 from . import endpoints
 
-#Added security and modularity in the login process.
-#Place credentials file in the Robinhood directory.
-class Credential:
-    username= "";
-    password = "";
 
-    def __init__(self, username, password):
-        self.username = username;
-        self.password = password;
-
-    def __init__(self, credsFileName):
-        credsFile = open(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) + "/" + credsFileName, "r");
-        credsList = credsFile.read().replace(' ','').split(',');
-        self.username = credsList[0];
-        self.password = credsList[1];
-
-    def getUsername(self):
-        return self.username;
-    def getPassword(self):
-        return self.password;
 
 class Bounds(Enum):
     """Enum for bounds in `historicals` endpoint """
@@ -109,8 +86,6 @@ class Robinhood:
 
         return self.login(username=username, password=password)
 
-    def login_with_creds(self, credential):
-        self.login(self, credential.getUsername(), credential.getPassword())
 
     def login(self,
               username,
@@ -127,37 +102,43 @@ class Robinhood:
 
         """
 
-        self.username = username
-        self.password = password
-        payload = {
-            'client_id': 'c82SH0WZOsabOXGP2sxqcj34FxkvfnWRZBKlBjFS',
-            'expires_in': 86400,
-            'grant_type': 'password',
-            'password': self.password,
-            'scope': 'internal',
-            'username': self.username
-        }
 
         if mfa_code:
-            payload['mfa_code'] = mfa_code
-
+            fields = { 'client_id' : 'c82SH0WZOsabOXGP2sxqcj34FxkvfnWRZBKlBjFS',
+                        'expires_in' : 86400,
+                        'grant_type': 'password',
+                        'password' : self.password,
+                        'scope' : 'internal',
+                        'username' : self.username,
+                        'mfa_code': self.mfa_code,
+                       }
+        else:
+            fields = {'client_id': 'c82SH0WZOsabOXGP2sxqcj34FxkvfnWRZBKlBjFS',
+                      'expires_in': 86400,
+                      'grant_type': 'password',
+                      'password': password,
+                      'scope': 'internal',
+                      'username': username,
+                       }
         try:
-            res = self.session.post(endpoints.login(), data=payload, timeout=15)
-            res.raise_for_status()
-            data = res.json()
-        except requests.exceptions.HTTPError:
-            raise RH_exception.LoginFailed()
+            data = urllib.urlencode(fields) #py2
+        except:
+            #data = urllib.parse.urlencode(fields) #py3
+            data = fields
 
-        if 'mfa_required' in data.keys():           # pragma: no cover
-            raise RH_exception.TwoFactorRequired()  # requires a second call to enable 2FA
+        res = self.session.post(endpoints.login(), data=data)
+        #res.raise_for_status()
+        res = res.json()
+        #print(data)
+        try:
+            #self.auth_token = res['token']
+            self.oauth_token = res['access_token']
+        except KeyError:
+            return res
 
-        if 'access_token' in data.keys():
-            self.auth_token = data['access_token']
-            self.headers['Authorization'] = 'Bearer ' + self.auth_token
-            print self.headers
-            return True
-
-        return False
+        #self.headers['Authorization'] = 'Token '+self.auth_token
+        self.headers['Authorization'] = 'Bearer ' + self.oauth_token
+        return True
 
 
     def logout(self):
@@ -235,57 +216,6 @@ class Robinhood:
 
         return data
 
-    def instrument_by_url(self, instrument_url):
-        """Fetch instrument info
-
-            Args:
-                id (str): instrument id
-
-            Returns:
-                (:obj:`dict`): JSON dict of instrument
-        """
-        url = instrument_url
-
-        try:
-            req = requests.get(url, timeout=15)
-            req.raise_for_status()
-            data = req.json()
-        except requests.exceptions.HTTPError:
-            raise RH_exception.InvalidInstrumentId()
-
-        return data
-
-    def quote_data_external(self, stock):
-        """
-        Fetches last quote via external API.
-        :param stock: Stock ticker as string
-        :return: current quote by ticker
-        """
-        req_url = endpoints.external_quotes() + stock;
-
-        # Check for validity of symbol
-        try:
-            req = requests.get(req_url, timeout=15)
-            req.raise_for_status()
-            data = req.json()[0]["price"];
-        except requests.exceptions.HTTPError:
-            raise RH_exception.InvalidTickerSymbol()
-
-        return data;
-
-    def quotes_data_external(self, stocks):
-        """
-        Duplicate of quotes_data using external API.
-        :param stocks: list of tickers
-        :return: quote for multiple stocks, key is ticker
-        """
-        price_list = {};
-
-        for stock in stocks:
-            stock_price = self.quote_data_external(stock);
-            price_list[stock] = stock_price;
-
-        return price_list;
 
     def quote_data(self, stock=''):
         """Fetch stock quote
@@ -427,31 +357,6 @@ class Robinhood:
         res = self.session.get(endpoints.historicals(), params=params, timeout=15)
         return res.json()
 
-    def get_historical_quote_external(self, stock, date):
-
-        """
-        Could be more efficient, external API renders data poorly.
-
-        :param stock:
-        :param date: format as "YYYY-MM-DD"
-        :return: high of the day at specified date.
-        """
-
-        req_url = endpoints.historicals_external() + stock + "/chart/5y";
-
-        stock_price_on_date = 0;
-
-        try:
-            req = requests.get(req_url, timeout=15)
-            req.raise_for_status()
-            data = req.json();
-            for quote in data:
-                if quote["date"] == date:
-                    stock_price_on_date = quote["high"];
-        except requests.exceptions.HTTPError:
-            raise RH_exception.InvalidTickerSymbol()
-
-        return stock_price_on_date;
 
     def get_news(self, stock):
         """Fetch news endpoint
@@ -1450,9 +1355,9 @@ class Robinhood:
     def cancel_order(
             self,
             order_id
-    ): 
+    ):
         """
-        Cancels specified order and returns the response (results from `orders` command). 
+        Cancels specified order and returns the response (results from `orders` command).
         If order cannot be cancelled, `None` is returned.
 
         Args:
@@ -1471,129 +1376,16 @@ class Robinhood:
             raise ValueError('Cancelling orders requires a valid order_id string')
 
         if order.get('cancel') is not None:
-            try: 
+            try:
                 res = self.session.post(order['cancel'], timeout=15)
                 res.raise_for_status()
             except (requests.exceptions.HTTPError) as err_msg:
                 raise ValueError('Failed to cancel order ID: ' + order_id
                      + '\n Error message: '+ repr(err_msg))
                 return None
-            
+
         # Order type cannot be cancelled without a valid cancel link
-        else: 
+        else:
             raise ValueError('Unable to cancel order ID: ' + order_id)
 
         return res
-
-    def compare_to_benchmark(self, benchmark_ticker="SPY"):
-
-        stdev = 0
-        beta = 0
-        alpha = 0
-        sharpe = 0
-
-        historical_changes = []
-
-        benchmark = benchmark_ticker
-
-        # FETCHES PAST ORDERS
-        my_orders = self.order_history()
-        past_results = my_orders.get("results")
-        all_trades = []
-
-        for trade in past_results:
-
-            trade_info = {}
-
-            instrument_url = trade["instrument"]
-            this_instrument = self.instrument_by_url(instrument_url)
-
-            symbol = this_instrument["symbol"]
-            # symbol = unicodedata.normalize('NFKD', symbol).encode('ascii', 'ignore')
-            trade_info["symbol"] = symbol
-
-            timestamp = trade["last_transaction_at"]
-            # timestamp = unicodedata.normalize('NFKD', timestamp).encode('ascii', 'ignore')
-            date = timestamp[:10]
-            trade_info["date"] = date
-
-            this_price = trade["average_price"]
-            # this_price = unicodedata.normalize('NFKD', this_price).encode('ascii', 'ignore')
-            trade_info["price"] = this_price
-
-            shares = trade["quantity"]
-            # shares = unicodedata.normalize('NFKD', shares).encode('ascii', 'ignore')
-            trade_info["shares"] = shares
-
-            side = trade["side"]
-            trade_info["side"] = side
-
-            state = trade["state"]
-            trade_info["state"] = state
-
-            if shares != None and this_price != None and state == "filled":
-                shares_as_float = float(unicodedata.normalize('NFKD', shares).encode('ascii', 'ignore'))
-                price_as_float = float(unicodedata.normalize('NFKD', this_price).encode('ascii', 'ignore'))
-
-                total_cost = shares_as_float * price_as_float
-                trade_info["total"] = total_cost
-
-                # print trade_info
-
-                # print ""
-
-                all_trades.append(trade_info)
-            pass
-
-        # FETCHES BENCHMARK PRICES BY DAY
-        spy_prices = {}
-
-        history_json = self.get_historical_quotes(benchmark, "day", 'year', 'regular')  # can also use 5year
-        price_history = history_json["results"]
-        price_history = price_history[0]
-        price_history = price_history["historicals"]
-
-        for historical in price_history:
-            date = (historical["begins_at"])[:10]
-            price = historical["high_price"]
-            spy_prices[date] = price
-            pass
-
-        portfolio_cost = 0.00
-        portfolio_value = self.last_core_equity()
-        spy_portfolio_value = 0.00
-
-        current_spy_price = float(self.quote_data_external(benchmark_ticker)); #float(self.quote_data(benchmark)["previous_close"])
-
-        #This loop throws issues if orders are placed during non-week days. Change to order fill?
-
-        # Simulate if trader had only traded SPY
-        # TODO: Logic here may be broken following API changes. Look into it.
-        for trade in all_trades:
-
-            current_security_price = float(self.quote_data(trade["symbol"])["previous_close"])
-            thisdate = unicodedata.normalize('NFKD', trade["date"]).encode('ascii', 'ignore')
-            price_return = current_security_price / float(trade["price"])
-
-            past_spy_price = float(self.get_historical_quote_external(benchmark_ticker, thisdate)); #float(spy_prices[thisdate])
-
-            spy_return = current_spy_price / past_spy_price
-            trade["price_return"] = price_return
-            trade["spy_return"] = spy_return
-
-            if trade["side"] == "buy":
-                spy_portfolio_value += (trade["total"] * spy_return)
-                portfolio_cost += trade["total"]
-            else:
-                spy_portfolio_value -= (trade["total"])
-                portfolio_cost -= trade["total"]
-                pass
-
-        print "Your portfolio value if you had invested in " + benchmark + ":",
-        print spy_portfolio_value
-        print "Your portfolio value:",
-        print portfolio_value
-        print "Difference as %:",
-        print (portfolio_value / spy_portfolio_value - 1) * 100
-
-        pass
