@@ -102,24 +102,13 @@ class Robinhood:
 
         """
 
-
-        if mfa_code:
-            fields = { 'client_id' : 'c82SH0WZOsabOXGP2sxqcj34FxkvfnWRZBKlBjFS',
-                        'expires_in' : 86400,
-                        'grant_type': 'password',
-                        'password' : self.password,
-                        'scope' : 'internal',
-                        'username' : self.username,
-                        'mfa_code': self.mfa_code,
-                       }
-        else:
-            fields = {'client_id': 'c82SH0WZOsabOXGP2sxqcj34FxkvfnWRZBKlBjFS',
-                      'expires_in': 86400,
-                      'grant_type': 'password',
-                      'password': password,
-                      'scope': 'internal',
-                      'username': username,
-                       }
+	fields = {'client_id': 'c82SH0WZOsabOXGP2sxqcj34FxkvfnWRZBKlBjFS',
+		'expires_in': 86400,
+		'grant_type': 'password',
+		'password': password,
+		'scope': 'internal',
+		'username': username,
+	}
         try:
             data = urllib.urlencode(fields) #py2
         except:
@@ -129,7 +118,20 @@ class Robinhood:
         res = self.session.post(endpoints.login(), data=data)
         #res.raise_for_status()
         res = res.json()
-        #print(data)
+	
+	if 'mfa_required' in res:
+		try:
+			self.mfa_code = raw_input("MFA code: ").strip()
+			fields['mfa_code'] = self.mfa_code
+			data = urllib.urlencode(fields)
+		except:
+			self.mfa_code = input("MFA code: ").strip()
+			fields['mfa_code'] = self.mfa_code
+			data = fields
+        
+	res = self.session.post(endpoints.login(), data=data)
+	res = res.json()
+
         try:
             #self.auth_token = res['token']
             self.oauth_token = res['access_token']
