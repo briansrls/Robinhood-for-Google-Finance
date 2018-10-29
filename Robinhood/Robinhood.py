@@ -15,7 +15,6 @@ import getpass
 import requests
 import six
 import dateutil
-import urllib
 
 #Application-specific imports
 from . import exceptions as RH_exception
@@ -89,8 +88,7 @@ class Robinhood:
 
     def login(self,
               username,
-              password,
-              mfa_code=None):
+              password):
         """Save and test login info for Robinhood accounts
 
         Args:
@@ -109,10 +107,7 @@ class Robinhood:
         	'scope': 'internal',
         	'username': username,
         }
-        try:
-            data = urllib.urlencode(fields) #py2
-        except:
-            data = fields
+        data = fields
 
         res = self.session.post(endpoints.login(), data=data)
         res = res.json()
@@ -120,12 +115,11 @@ class Robinhood:
         if 'mfa_required' in res:
         	try:
         		self.mfa_code = raw_input("MFA code: ").strip()
-        		fields['mfa_code'] = self.mfa_code
-        		data = urllib.urlencode(fields)
         	except:
         		self.mfa_code = input("MFA code: ").strip()
-        		fields['mfa_code'] = self.mfa_code
-        		data = fields
+
+        	fields['mfa_code'] = self.mfa_code
+        	data = fields	
         
         res = self.session.post(endpoints.login(), data=data)
         res = res.json()
